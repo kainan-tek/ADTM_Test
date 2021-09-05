@@ -32,9 +32,9 @@ class Main_GUI():
         self.gl_bg = "#e7eaed"
         Gui_Info["cwd"] = os.getcwd()
         Gui_Info["json_file"] = os.path.join(Gui_Info["cwd"], Gui_Info["json_file"])
-        self.min_pattern = re.compile(r"interval_min:(.*) ms,")  # interval_min:0 ms,
-        self.max_pattern = re.compile(r"inverval_max:(.*) ms,")  # inverval_max:11 ms,
-        self.mean_pattern = re.compile(r"inverval_mean:(.*) ms!")  # inverval_mean:8 ms!
+        self.min_pattern = re.compile(r"interval_min:(\d+) ms")  # interval_min:0 ms,
+        self.max_pattern = re.compile(r"inverval_max:(\d+) ms")  # inverval_max:11 ms,
+        self.mean_pattern = re.compile(r"inverval_mean:(\d+) ms")  # inverval_mean:8 ms!
 
         # ****************  set gui theme style  *********************
         ttk.Style().configure("TButton", font=("Times New Roman", 12, "bold"))
@@ -54,50 +54,50 @@ class Main_GUI():
 
         label_font = ("Times New Roman", 12, "bold")
         cfg_label = tk.Label(self.main_f, text="Cfg File:", anchor="w", bg=self.gl_bg, font=label_font)
-        cfg_label.place(x=10, y=10, width=70, height=35)
+        cfg_label.place(x=10, y=15, width=70, height=35)
 
         self.cfg_entry = tk.Entry(self.main_f, bg="#e4f9e0", font=("Courier New", 11))
-        self.cfg_entry.place(x=80, y=10, width=300, height=35)
+        self.cfg_entry.place(x=80, y=15, width=320, height=35)
         self.cfg_entry.insert(0, Gui_Info["json_file"])
         self.cfg_entry["state"] = "disable"
 
         cfg_bt = ttk.Button(self.main_f, text="Load", style="my.TButton", command=self.call_cfg_load_bt)
-        cfg_bt.place(x=390, y=10, width=70, height=35)
+        cfg_bt.place(x=410, y=15, width=70, height=35)
 
         log_label = tk.Label(self.main_f, text="Log File:", anchor="w", bg=self.gl_bg, font=label_font)
-        log_label.place(x=10, y=55, width=70, height=35)
+        log_label.place(x=10, y=70, width=70, height=35)
 
         self.log_entry = tk.Entry(self.main_f, font=("Courier New", 11))
-        self.log_entry.place(x=80, y=55, width=300, height=35)
+        self.log_entry.place(x=80, y=70, width=320, height=35)
 
         log_bt = ttk.Button(self.main_f, text="Select", style="my.TButton", command=self.call_log_select_bt)
-        log_bt.place(x=390, y=55, width=70, height=35)
+        log_bt.place(x=410, y=70, width=70, height=35)
 
-        sep_ = ttk.Separator(self.main_f, orient="horizontal")
-        sep_.place(x=10, y=110, width=580, height=2, bordermode="inside")
+        sep1_ = ttk.Separator(self.main_f, orient="horizontal")
+        sep1_.place(x=10, y=130, width=480, height=3, bordermode="inside")
 
         psize_label = tk.Label(self.main_f, text="period time:", anchor="w", bg=self.gl_bg, font=label_font)
-        psize_label.place(x=10, y=130, width=90, height=30)
+        psize_label.place(x=10, y=150, width=90, height=30)
 
         self.psize_entry = tk.Entry(self.main_f, font=("Courier New", 11))
-        self.psize_entry.place(x=100, y=130, width=70, height=30)
+        self.psize_entry.place(x=100, y=150, width=70, height=30)
         self.psize_entry.insert(0, 8)
 
         bsize_label = tk.Label(self.main_f, text="buffer time:", anchor="w", bg=self.gl_bg, font=label_font)
-        bsize_label.place(x=220, y=130, width=90, height=30)
+        bsize_label.place(x=240, y=150, width=90, height=30)
 
         self.bsize_entry = tk.Entry(self.main_f, font=("Courier New", 11))
-        self.bsize_entry.place(x=310, y=130, width=70, height=30)
+        self.bsize_entry.place(x=330, y=150, width=70, height=30)
         self.bsize_entry.insert(0, 24)
 
         Filter_label = tk.Label(self.main_f, text="Test Point:", anchor="w", bg=self.gl_bg, font=label_font)
-        Filter_label.place(x=10, y=180, width=90, height=35)
+        Filter_label.place(x=10, y=200, width=90, height=35)
 
         self.filter_combobox = ttk.Combobox(self.main_f)
-        self.filter_combobox.place(x=100, y=180, width=280, height=35)
+        self.filter_combobox.place(x=100, y=200, width=300, height=35)
 
         self.log_bt = ttk.Button(self.main_f, text="Draw", style="my.TButton", command=self.call_draw_select_bt)
-        self.log_bt.place(x=390, y=180, width=70, height=35)
+        self.log_bt.place(x=410, y=200, width=70, height=35)
 
     def init_task(self):
         json_ops = Parse_Json(Gui_Info["json_file"])
@@ -215,15 +215,15 @@ class Main_GUI():
             tkinter.messagebox.showerror("Error", "Error of opening log file")
             return False
 
-        [target_log_list.append(item) for item in all_log_list if self.draw_dict["test_point"]
-         in item and "inverval_max" in item]
+        target_log_list = [item for item in all_log_list if re.search(
+            self.draw_dict["test_point"], item, re.I) and "inverval_max" in item]
         # print(target_log_list)
         actual_time_list = [int(self.max_pattern.findall(item)[0]) for item in target_log_list]
         # print(actual_time_list)
         data_len = len(target_log_list)
         x_list = [i for i in range(data_len)]
-        period_time_list = [8 for item in target_log_list]
-        buffer_time_list = [24 for item in target_log_list]
+        period_time_list = [self.draw_dict["period_time"] for item in target_log_list]
+        buffer_time_list = [self.draw_dict["buffer_time"] for item in target_log_list]
 
         trace_period = dict(x=x_list,
                             y=period_time_list,
