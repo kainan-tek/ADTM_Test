@@ -1,7 +1,6 @@
 import tkinter as tk
 import tkinter.filedialog
 import tkinter.messagebox
-import tkinter.scrolledtext
 from tkinter import ttk
 from logsfile import Logger
 import os
@@ -109,7 +108,7 @@ class Main_GUI():
         self.json_dict = ret[1]
 
         json_list = []
-        [json_list.append(item) for item in self.json_dict if self.json_dict[item]]
+        json_list = [item for item in self.json_dict if self.json_dict[item]]
         if not json_list:
             self.log.warning('No available test point in the cfg file, Please check the cfg file')
             tkinter.messagebox.showwarning(
@@ -145,7 +144,7 @@ class Main_GUI():
         Gui_Info["json_file"] = json_file
 
         json_list = []
-        [json_list.append(item) for item in self.json_dict if self.json_dict[item]]
+        json_list = [item for item in self.json_dict if self.json_dict[item]]
         if not json_list:
             self.log.warning('No available test point in the cfg file, Please check the cfg file')
             tkinter.messagebox.showwarning(
@@ -189,6 +188,7 @@ class Main_GUI():
             tmp_flag = False
             tmp_str = "No buffer time be found"
         if not tmp_flag:
+            self.log.error(tmp_str)
             tkinter.messagebox.showerror("Error", tmp_str)
             return False
 
@@ -199,6 +199,7 @@ class Main_GUI():
             self.draw_dict["period_time"] = int(period_time)
             self.draw_dict["buffer_time"] = int(buffer_time)
         except Exception:
+            self.log.error("Check the type of period_time or buffer_time")
             tkinter.messagebox.showerror("Error", "Check the type of period_time or buffer_time")
             return False
 
@@ -209,16 +210,24 @@ class Main_GUI():
         all_log_list = []
         target_log_list = []
         try:
-            with open(self.draw_dict["log_file"], mode='r', encoding="utf-8") as fp:
+            with open(self.draw_dict["log_file"], mode='r', encoding="utf-8", errors="ignore") as fp:
                 all_log_list = fp.readlines()
-        except Exception:
+        except Exception as e:
+            self.log.error("Error of opening log file: %s" % (e))
             tkinter.messagebox.showerror("Error", "Error of opening log file")
             return False
 
         target_log_list = [item for item in all_log_list if re.search(
             self.draw_dict["test_point"], item, re.I) and "inverval_max" in item]
         # print(target_log_list)
+        if not target_log_list:
+            self.log.error("No data be found in log file")
+            tkinter.messagebox.showerror("Error", "No data be found in log file")
+            return False
         actual_time_list = [int(self.max_pattern.findall(item)[0]) for item in target_log_list]
+        if len(target_log_list) > 10:
+            del actual_time_list[:5]
+            del actual_time_list[-5:]
         # print(actual_time_list)
         data_len = len(target_log_list)
         x_list = [i for i in range(data_len)]
@@ -240,7 +249,8 @@ class Main_GUI():
                             mode='lines+markers',
                             name='actual_time',
                             line=dict(color="blue"))
-        _layout = dict(title=self.draw_dict["test_point"], xaxis=dict(title='s'), yaxis=dict(title='ms'))
+        _layout = dict(title=self.draw_dict["test_point"], xaxis=dict(
+            title='unit: second'), yaxis=dict(title='unit: ms'))
 
         _data = [trace_period, trace_actual, trace_buffer]
         fig = go.Figure(data=_data, layout=_layout)

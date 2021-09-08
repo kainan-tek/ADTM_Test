@@ -1,6 +1,7 @@
 {
     "pcmMicRefIn_c": 1,
-    "pcmBtHfp_ul_pro_p": 1,
-    "pcmBtHfp_dl_pre_c": 1,
-    "pcmMainOutput_p": 1
+    "pcmBtHfp_ul_pro_p": 0,
+    "pcmBtHfp_dl_pre_c": 0,
+    "pcmMainOutput_p": 0,
+    "pcmCall_p": 1
 }
