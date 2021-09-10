@@ -1,8 +1,7 @@
 Gui_Info = {"proj": "ADTM Test",
-            "version": " v1.0.0",
-            "normal_size": [500, 300],
+            "version": " v1.1.0",
+            "normal_size": [500, 250],
             "debug_dir": r"C:\Apps\Temp\ADTM\debug_log",
-            "json_file": r"cfg.json",
             "cwd": ""
             }
 

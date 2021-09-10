@@ -10,7 +10,6 @@ import subprocess
 import plotly.graph_objs as go
 from global_var import Gui_Info
 from global_var import About_Info
-from parse_file import Parse_Json
 
 
 class Main_GUI():
@@ -23,17 +22,15 @@ class Main_GUI():
         self.create_root_frame()
         self.create_menu()
         self.create_main_frame()
-        self.init_task()
 
     def init_var(self):
-        self.json_dict = {}
         self.draw_dict = {}
         self.gl_bg = "#e7eaed"
-        Gui_Info["cwd"] = os.getcwd()
-        Gui_Info["json_file"] = os.path.join(Gui_Info["cwd"], Gui_Info["json_file"])
-        self.min_pattern = re.compile(r"interval_min:(\d+) ms")  # interval_min:0 ms,
+        self.key_words = ["inverval_max", "interval_min", "inverval_mean"]
+        # self.min_pattern = re.compile(r"interval_min:(\d+) ms")  # interval_min:0 ms,
+        # self.mean_pattern = re.compile(r"inverval_mean:(\d+) ms")  # inverval_mean:8 ms!
         self.max_pattern = re.compile(r"inverval_max:(\d+) ms")  # inverval_max:11 ms,
-        self.mean_pattern = re.compile(r"inverval_mean:(\d+) ms")  # inverval_mean:8 ms!
+        self.alsanode_pattern = re.compile(r"alsa node\((.*)\) adtm")  # alsa node(pcmMicRefIn_c) adtm
 
         # ****************  set gui theme style  *********************
         ttk.Style().configure("TButton", font=("Times New Roman", 12, "bold"))
@@ -52,108 +49,46 @@ class Main_GUI():
         self.tab.select(self.main_f)
 
         label_font = ("Times New Roman", 12, "bold")
-        cfg_label = tk.Label(self.main_f, text="Cfg File:", anchor="w", bg=self.gl_bg, font=label_font)
-        cfg_label.place(x=10, y=15, width=70, height=35)
-
-        self.cfg_entry = tk.Entry(self.main_f, bg="#e4f9e0", font=("Courier New", 11))
-        self.cfg_entry.place(x=80, y=15, width=320, height=35)
-        self.cfg_entry.insert(0, Gui_Info["json_file"])
-        self.cfg_entry["state"] = "disable"
-
-        cfg_bt = ttk.Button(self.main_f, text="Load", style="my.TButton", command=self.call_cfg_load_bt)
-        cfg_bt.place(x=410, y=15, width=70, height=35)
-
         log_label = tk.Label(self.main_f, text="Log File:", anchor="w", bg=self.gl_bg, font=label_font)
-        log_label.place(x=10, y=70, width=70, height=35)
+        log_label.place(x=10, y=10, width=70, height=35)
 
         self.log_entry = tk.Entry(self.main_f, font=("Courier New", 11))
-        self.log_entry.place(x=80, y=70, width=320, height=35)
+        self.log_entry.place(x=80, y=10, width=320, height=35)
+        self.log_entry.configure(state="readonly")
 
         log_bt = ttk.Button(self.main_f, text="Select", style="my.TButton", command=self.call_log_select_bt)
-        log_bt.place(x=410, y=70, width=70, height=35)
+        log_bt.place(x=410, y=10, width=70, height=35)
 
         sep1_ = ttk.Separator(self.main_f, orient="horizontal")
-        sep1_.place(x=10, y=130, width=480, height=3, bordermode="inside")
+        sep1_.place(x=10, y=65, width=480, height=3, bordermode="inside")
 
         psize_label = tk.Label(self.main_f, text="period time:", anchor="w", bg=self.gl_bg, font=label_font)
-        psize_label.place(x=10, y=150, width=90, height=30)
+        psize_label.place(x=10, y=85, width=90, height=30)
 
         self.psize_entry = tk.Entry(self.main_f, font=("Courier New", 11))
-        self.psize_entry.place(x=100, y=150, width=70, height=30)
+        self.psize_entry.place(x=100, y=85, width=70, height=30)
         self.psize_entry.insert(0, 8)
 
         bsize_label = tk.Label(self.main_f, text="buffer time:", anchor="w", bg=self.gl_bg, font=label_font)
-        bsize_label.place(x=240, y=150, width=90, height=30)
+        bsize_label.place(x=240, y=85, width=90, height=30)
 
         self.bsize_entry = tk.Entry(self.main_f, font=("Courier New", 11))
-        self.bsize_entry.place(x=330, y=150, width=70, height=30)
+        self.bsize_entry.place(x=330, y=85, width=70, height=30)
         self.bsize_entry.insert(0, 24)
 
-        Filter_label = tk.Label(self.main_f, text="Test Point:", anchor="w", bg=self.gl_bg, font=label_font)
-        Filter_label.place(x=10, y=200, width=90, height=35)
+        node_label = tk.Label(self.main_f, text="Alsa Node:", anchor="w", bg=self.gl_bg, font=label_font)
+        node_label.place(x=10, y=135, width=90, height=35)
 
-        self.filter_combobox = ttk.Combobox(self.main_f)
-        self.filter_combobox.place(x=100, y=200, width=300, height=35)
+        self.node_combobox = ttk.Combobox(self.main_f)
+        self.node_combobox.place(x=100, y=135, width=300, height=35)
 
-        self.log_bt = ttk.Button(self.main_f, text="Draw", style="my.TButton", command=self.call_draw_select_bt)
-        self.log_bt.place(x=410, y=200, width=70, height=35)
-
-    def init_task(self):
-        json_ops = Parse_Json(Gui_Info["json_file"])
-        ret = json_ops.file_read()
-        if not ret[0].value == 0:
-            self.log.error('Error type: %s' % ret[0].name)
-            tkinter.messagebox.showerror("Error", "Error type: %s" % ret[0].name)
-            return False
-        self.json_dict = ret[1]
-
-        json_list = []
-        json_list = [item for item in self.json_dict if self.json_dict[item]]
-        if not json_list:
-            self.log.warning('No available test point in the cfg file, Please check the cfg file')
-            tkinter.messagebox.showwarning(
-                "Warning", "No available test point in the cfg file\n\nPlease check the cfg file")
-            return False
-        self.filter_combobox["values"] = json_list
-        self.filter_combobox.current(0)
-
-    def call_cfg_load_bt(self):
-        file_type = [('json files', '.json'), ('all files', '.*')]
-        json_file = tkinter.filedialog.askopenfilename(initialdir=Gui_Info["cwd"],
-                                                       title="Please select a cfg file:",
-                                                       filetypes=file_type)
-        if not json_file:
-            self.log.info("No cfg file be selected")
-            return False
-        json_file = os.path.normpath(json_file)
-        self.log.info("Cfg file: "+json_file)
-
-        json_ops = Parse_Json(json_file)
-        ret = json_ops.file_read()
-        if not ret[0].value == 0:
-            self.log.error('Error type: %s' % ret[0].name)
-            tkinter.messagebox.showerror("Error", "Error type: %s" % ret[0].name)
-            return False
-
-        self.cfg_entry["state"] = "normal"
-        self.cfg_entry.delete(0, "end")
-        self.cfg_entry.insert(0, json_file)
-        self.cfg_entry["state"] = "disable"
-
-        self.json_dict = ret[1]
-        Gui_Info["json_file"] = json_file
-
-        json_list = []
-        json_list = [item for item in self.json_dict if self.json_dict[item]]
-        if not json_list:
-            self.log.warning('No available test point in the cfg file, Please check the cfg file')
-            tkinter.messagebox.showwarning(
-                "Warning", "No available test point in the cfg file\n\nPlease check the cfg file")
-            return False
-        self.filter_combobox["values"] = json_list
-        self.filter_combobox.current(0)
+        self.log_bt = ttk.Button(self.main_f, text="Draw", style="my.TButton", command=self.call_draw_bt)
+        self.log_bt.place(x=410, y=135, width=70, height=35)
 
     def call_log_select_bt(self):
+        all_log_list = []
+        alsanode_list = []
+
         file_type = [('log files', '.txt'), ('all files', '.*')]
         log_file = tkinter.filedialog.askopenfilename(initialdir="",
                                                       title="Please select a log file:",
@@ -163,24 +98,47 @@ class Main_GUI():
             return False
 
         log_file = os.path.normpath(log_file)
+        self.log_entry.configure(state="normal")
         self.log_entry.delete(0, "end")
         self.log_entry.insert(0, log_file)
+        self.log_entry.configure(state="readonly")
         self.log.info("Log file: "+log_file)
+        self.node_combobox["values"] = []
+        self.node_combobox.delete(0, "end")
 
-    def call_draw_select_bt(self):
+        try:
+            with open(log_file, mode='r', encoding="utf-8", errors="ignore") as fp:
+                all_log_list = fp.readlines()
+        except Exception as e:
+            self.log.error("Error of opening log file: %s" % e)
+            tkinter.messagebox.showerror("Error", "Error of opening log file")
+            return False
+
+        for item in all_log_list:
+            _alsanode = self.alsanode_pattern.findall(item)
+            if _alsanode and _alsanode[0] not in alsanode_list:
+                alsanode_list.append(_alsanode[0])
+        if not alsanode_list:
+            self.log.error("No alsa node be found in log file")
+            tkinter.messagebox.showerror("Error", "No alsa node be found in log file")
+            return False
+        self.node_combobox["values"] = alsanode_list
+        self.node_combobox.current(0)
+
+    def call_draw_bt(self):
         tmp_flag = True
         tmp_str = ""
 
         log_file = self.log_entry.get().strip()
-        test_point = self.filter_combobox.get().strip()
+        alsa_node = self.node_combobox.get().strip()
         period_time = self.psize_entry.get().strip()
         buffer_time = self.bsize_entry.get().strip()
         if not os.path.exists(log_file):
             tmp_flag = False
             tmp_str = "No log file be selected"
-        elif not test_point:
+        elif not alsa_node:
             tmp_flag = False
-            tmp_str = "No test point be selected"
+            tmp_str = "No alsa node be selected"
         elif not period_time:
             tmp_flag = False
             tmp_str = "No period time be found"
@@ -194,7 +152,7 @@ class Main_GUI():
 
         self.draw_dict.clear()
         self.draw_dict["log_file"] = log_file
-        self.draw_dict["test_point"] = test_point
+        self.draw_dict["alsa_node"] = alsa_node
         try:
             self.draw_dict["period_time"] = int(period_time)
             self.draw_dict["buffer_time"] = int(buffer_time)
@@ -212,27 +170,27 @@ class Main_GUI():
         try:
             with open(self.draw_dict["log_file"], mode='r', encoding="utf-8", errors="ignore") as fp:
                 all_log_list = fp.readlines()
-        except Exception as e:
-            self.log.error("Error of opening log file: %s" % (e))
+        except Exception:
+            self.log.error("Error of opening log file")
             tkinter.messagebox.showerror("Error", "Error of opening log file")
             return False
 
         target_log_list = [item for item in all_log_list if re.search(
-            self.draw_dict["test_point"], item, re.I) and "inverval_max" in item]
+            self.draw_dict["alsa_node"], item, re.I) and self.key_words[0] in item]
         # print(target_log_list)
         if not target_log_list:
             self.log.error("No data be found in log file")
             tkinter.messagebox.showerror("Error", "No data be found in log file")
             return False
         actual_time_list = [int(self.max_pattern.findall(item)[0]) for item in target_log_list]
-        if len(target_log_list) > 10:
+        if len(actual_time_list) > 10:
             del actual_time_list[:5]
             del actual_time_list[-5:]
         # print(actual_time_list)
-        data_len = len(target_log_list)
+        data_len = len(actual_time_list)
         x_list = [i for i in range(data_len)]
-        period_time_list = [self.draw_dict["period_time"] for item in target_log_list]
-        buffer_time_list = [self.draw_dict["buffer_time"] for item in target_log_list]
+        period_time_list = [self.draw_dict["period_time"] for item in actual_time_list]
+        buffer_time_list = [self.draw_dict["buffer_time"] for item in actual_time_list]
 
         trace_period = dict(x=x_list,
                             y=period_time_list,
@@ -249,7 +207,7 @@ class Main_GUI():
                             mode='lines+markers',
                             name='actual_time',
                             line=dict(color="blue"))
-        _layout = dict(title=self.draw_dict["test_point"], xaxis=dict(
+        _layout = dict(title=self.draw_dict["alsa_node"], xaxis=dict(
             title='unit: second'), yaxis=dict(title='unit: ms'))
 
         _data = [trace_period, trace_actual, trace_buffer]
@@ -271,7 +229,7 @@ class Main_GUI():
         self.root.resizable(0, 0)
 
     def create_menu(self):
-        menu_dict = {"File": ["Open Cfg", "Exit"],
+        menu_dict = {"File": ["Exit"],
                      "Logging": ["Open DebugLog"],
                      "Help": ["About"]
                      }
@@ -279,9 +237,7 @@ class Main_GUI():
         menu_font = ("Times New Roman", 11)
         self.menubar = tk.Menu(self.root)
         file_menu = tk.Menu(self.menubar, font=menu_font, activeborderwidth=2, tearoff=False)
-        file_menu.add_command(label=menu_dict["File"][0], command=self.menu_file_open)
-        file_menu.add_separator()
-        file_menu.add_command(label=menu_dict["File"][1], command=self.menu_file_exit)
+        file_menu.add_command(label=menu_dict["File"][0], command=self.menu_file_exit)
         self.menubar.add_cascade(label="File", menu=file_menu)
 
         logging_menu = tk.Menu(self.menubar, font=menu_font, activeborderwidth=2, tearoff=False)
@@ -295,21 +251,10 @@ class Main_GUI():
 
         self.root.config(menu=self.menubar)
 
-    # Menu File
-    def menu_file_load(self):
-        self.log.info("Starting to load json file.")
-        self.call_load_test_file()
-
-    def menu_file_open(self):
-        self.log.info("Starting to open json file.")
-        subprocess.Popen("notepad %s" % Gui_Info["json_file"], shell=True)
-        # os.system("notepad %s" % Gui_Info["json_file"])
-
     def menu_file_exit(self):
         self.log.info("GUI Tool is Closing")
         self.root.destroy()
 
-    # Menu Logging
     def menu_logging_debug(self):
         os.makedirs(Gui_Info["debug_dir"], mode=0o777, exist_ok=True)
         subprocess.Popen("start %s" % Gui_Info["debug_dir"], shell=True)

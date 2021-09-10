@@ -1,5 +1,8 @@
 ﻿Release Note:
 
+v1.1.0:
+    Automatically parse the alsa nodes while select the log file.
+
 v1.0.0:
     Initial Version.
 
