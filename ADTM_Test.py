@@ -7,7 +7,8 @@ import os
 import re
 import threading
 import subprocess
-import plotly.graph_objs as go
+from plotly.offline import plot
+import plotly.graph_objects as go
 from global_var import Gui_Info
 from global_var import About_Info
 
@@ -70,11 +71,16 @@ class Main_GUI():
         self.psize_entry.insert(0, 8)
 
         bsize_label = tk.Label(self.main_f, text="buffer time:", anchor="w", bg=self.gl_bg, font=label_font)
-        bsize_label.place(x=240, y=85, width=90, height=30)
+        bsize_label.place(x=190, y=85, width=90, height=30)
 
         self.bsize_entry = tk.Entry(self.main_f, font=("Courier New", 11))
-        self.bsize_entry.place(x=330, y=85, width=70, height=30)
+        self.bsize_entry.place(x=280, y=85, width=70, height=30)
         self.bsize_entry.insert(0, 24)
+
+        self.enimg_ckbt_var = tk.IntVar()
+        self.enimg_ckbt = tk.Checkbutton(self.main_f, text='enable image', font=label_font,
+                                         selectcolor="#C7EDCC", bg=self.gl_bg, variable=self.enimg_ckbt_var)
+        self.enimg_ckbt.place(x=370, y=85, height=30)
 
         node_label = tk.Label(self.main_f, text="Alsa Node:", anchor="w", bg=self.gl_bg, font=label_font)
         node_label.place(x=10, y=135, width=90, height=35)
@@ -151,6 +157,7 @@ class Main_GUI():
             return False
 
         self.draw_dict.clear()
+        self.draw_dict["en_img"] = False
         self.draw_dict["log_file"] = log_file
         self.draw_dict["alsa_node"] = alsa_node
         try:
@@ -160,6 +167,8 @@ class Main_GUI():
             self.log.error("Check the type of period_time or buffer_time")
             tkinter.messagebox.showerror("Error", "Check the type of period_time or buffer_time")
             return False
+        if self.enimg_ckbt_var.get():
+            self.draw_dict["en_img"] = True
 
         draw_thread = threading.Thread(target=self.drawing_thread, daemon=True, name="Draw Thread")
         draw_thread.start()
@@ -192,27 +201,22 @@ class Main_GUI():
         period_time_list = [self.draw_dict["period_time"] for item in actual_time_list]
         buffer_time_list = [self.draw_dict["buffer_time"] for item in actual_time_list]
 
-        trace_period = dict(x=x_list,
-                            y=period_time_list,
-                            mode='lines+markers',
-                            name='period_time',
-                            line=dict(color="green"))
-        trace_buffer = dict(x=x_list,
-                            y=buffer_time_list,
-                            mode='lines+markers',
-                            name='buffer_time',
-                            line=dict(color="red"))
-        trace_actual = dict(x=x_list,
-                            y=actual_time_list,
-                            mode='lines+markers',
-                            name='actual_time',
-                            line=dict(color="blue"))
-        _layout = dict(title=self.draw_dict["alsa_node"], xaxis=dict(
-            title='unit: second'), yaxis=dict(title='unit: ms'))
-
+        trace_period = go.Scatter(x=x_list, y=period_time_list, name="period_time",
+                                  mode="markers+lines", line=dict(color="green"))
+        trace_buffer = go.Scatter(x=x_list, y=buffer_time_list, name="buffer_time",
+                                  mode="markers+lines", line=dict(color="red"))
+        trace_actual = go.Scatter(x=x_list, y=actual_time_list, name="actual_time",
+                                  mode="markers+lines", line=dict(color="blue"))
         _data = [trace_period, trace_actual, trace_buffer]
+        _layout = go.Layout(title=self.draw_dict["alsa_node"], xaxis=dict(
+            title='unit: second'), yaxis=dict(title='unit: ms'), legend=dict(font_size=16))
+
         fig = go.Figure(data=_data, layout=_layout)
-        fig.show()
+        if self.draw_dict["en_img"]:
+            plot(fig, filename='adtm_test_%s.html' % self.draw_dict["alsa_node"], image='jpeg',
+                 image_width=1920, image_height=1080, image_filename='adtm_test_%s' % self.draw_dict["alsa_node"])
+        else:
+            plot(fig, filename='adtm_test_%s.html' % self.draw_dict["alsa_node"])
 
     def create_root_frame(self):
         sw = self.root.winfo_screenwidth()
