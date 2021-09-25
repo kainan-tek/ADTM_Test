@@ -28,9 +28,9 @@ class Main_GUI():
         self.draw_dict = {}
         self.gl_bg = "#e7eaed"
         self.key_words = ["inverval_max", "interval_min", "inverval_mean"]
-        # self.min_pattern = re.compile(r"interval_min:(\d+) ms")  # interval_min:0 ms,
-        # self.mean_pattern = re.compile(r"inverval_mean:(\d+) ms")  # inverval_mean:8 ms!
-        self.max_pattern = re.compile(r"inverval_max:(\d+) ms")  # inverval_max:11 ms,
+        # self.min_pattern = re.compile(r"interval_min:(\d+) ms")      # interval_min:0 ms
+        # self.mean_pattern = re.compile(r"inverval_mean:(\d+) ms")    # inverval_mean:8 ms
+        self.max_pattern = re.compile(r"inverval_max:(\d+) ms")        # inverval_max:11 ms
         self.alsanode_pattern = re.compile(r"alsa node\((.*)\) adtm")  # alsa node(pcmMicRefIn_c) adtm
 
         # ****************  set gui theme style  *********************
@@ -116,7 +116,7 @@ class Main_GUI():
             with open(log_file, mode='r', encoding="utf-8", errors="ignore") as fp:
                 all_log_list = fp.readlines()
         except Exception as e:
-            self.log.error("Error of opening log file: %s" % e)
+            self.log.error(f'Error of opening log file: {e}')
             tkinter.messagebox.showerror("Error", "Error of opening log file")
             return False
 
@@ -176,6 +176,7 @@ class Main_GUI():
     def drawing_thread(self):
         all_log_list = []
         target_log_list = []
+        data_dict = {}
         try:
             with open(self.draw_dict["log_file"], mode='r', encoding="utf-8", errors="ignore") as fp:
                 all_log_list = fp.readlines()
@@ -196,16 +197,16 @@ class Main_GUI():
             del actual_time_list[:5]
             del actual_time_list[-5:]
         # print(actual_time_list)
-        data_len = len(actual_time_list)
-        x_list = [i for i in range(data_len)]
-        period_time_list = [self.draw_dict["period_time"] for item in actual_time_list]
-        buffer_time_list = [self.draw_dict["buffer_time"] for item in actual_time_list]
+        data_dict["x"] = [i for i in range(len(actual_time_list))]
+        data_dict["y1"] = [self.draw_dict["period_time"] for item in actual_time_list]
+        data_dict["y2"] = [self.draw_dict["buffer_time"] for item in actual_time_list]
+        data_dict["y3"] = actual_time_list
 
-        trace_period = go.Scatter(x=x_list, y=period_time_list, name="period_time",
+        trace_period = go.Scatter(x=data_dict["x"], y=data_dict["y1"], name="period_time",
                                   mode="markers+lines", line=dict(color="green"))
-        trace_buffer = go.Scatter(x=x_list, y=buffer_time_list, name="buffer_time",
+        trace_buffer = go.Scatter(x=data_dict["x"], y=data_dict["y2"], name="buffer_time",
                                   mode="markers+lines", line=dict(color="red"))
-        trace_actual = go.Scatter(x=x_list, y=actual_time_list, name="actual_time",
+        trace_actual = go.Scatter(x=data_dict["x"], y=data_dict["y3"], name="actual_time",
                                   mode="markers+lines", line=dict(color="blue"))
         _data = [trace_period, trace_actual, trace_buffer]
         _layout = go.Layout(title=self.draw_dict["alsa_node"], xaxis=dict(
@@ -213,10 +214,10 @@ class Main_GUI():
 
         fig = go.Figure(data=_data, layout=_layout)
         if self.draw_dict["en_img"]:
-            plot(fig, filename='adtm_test_%s.html' % self.draw_dict["alsa_node"], image='jpeg',
-                 image_width=1920, image_height=1080, image_filename='adtm_test_%s' % self.draw_dict["alsa_node"])
+            plot(fig, filename=f'adtm_test_{self.draw_dict["alsa_node"]}.html', image='jpeg',
+                 image_width=1920, image_height=1080, image_filename=f'adtm_test_{self.draw_dict["alsa_node"]}')
         else:
-            plot(fig, filename='adtm_test_%s.html' % self.draw_dict["alsa_node"])
+            plot(fig, filename=f'adtm_test_{self.draw_dict["alsa_node"]}.html')
 
     def create_root_frame(self):
         sw = self.root.winfo_screenwidth()
@@ -261,7 +262,7 @@ class Main_GUI():
 
     def menu_logging_debug(self):
         os.makedirs(Gui_Info["debug_dir"], mode=0o777, exist_ok=True)
-        subprocess.Popen("start %s" % Gui_Info["debug_dir"], shell=True)
+        subprocess.Popen(f'start {Gui_Info["debug_dir"]}', shell=True)
         # os.system("start %s" % Gui_Info["debug_dir"])
 
     def menu_help_about(self):
