@@ -1,3 +1,4 @@
+# import ctypes
 import tkinter as tk
 import tkinter.filedialog
 import tkinter.messagebox
@@ -272,5 +273,8 @@ class Main_GUI():
 if __name__ == "__main__":
     log = Logger()
     root = tk.Tk()
+    # ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    # ScaleFactor=ctypes.windll.shcore.GetScaleFactorForDevice(0)
+    # root.tk.call('tk', 'scaling', ScaleFactor/75)
     Main_GUI(log, root)
     root.mainloop()
