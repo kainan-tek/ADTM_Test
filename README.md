@@ -9,8 +9,8 @@ notice: pyinstaller is used for packing the python script file(\*.py) to executa
 
 ## pack with pyinstaller
 ```C
-pyinstaller -F --clean ADTM_Test.spec  
+pyinstaller -F --clean main.spec  
 //or  
-pyinstaller -F --clean ADTM_Test.py
+pyinstaller -F --clean main.py
 ```
 

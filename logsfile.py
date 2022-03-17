@@ -1,6 +1,6 @@
 import os
 import logging.handlers
-from global_var import Gui_Info
+import global_var as gl
 
 
 class Logger(logging.Logger):
@@ -8,9 +8,13 @@ class Logger(logging.Logger):
         super(Logger, self).__init__(self)
         if not filename:
             filename = "debug.log"
-        if not os.path.exists(Gui_Info["debug_dir"]):
-            os.makedirs(Gui_Info["debug_dir"], exist_ok=True)
-        self.filename = os.path.normpath(os.path.join(Gui_Info["debug_dir"], filename))
+        if "nt" in os.name:
+            dbg_dirname = os.path.normpath(os.path.join(gl.Gui_Info["win_tmp"], gl.Gui_Info["dbg_reldir"]))
+        else:
+            dbg_dirname = os.path.join(os.path.expanduser('~'), gl.Gui_Info["dbg_reldir"])
+        if not os.path.exists(dbg_dirname):
+            os.makedirs(dbg_dirname, exist_ok=True)
+        self.logfile = os.path.normpath(os.path.join(dbg_dirname, filename))
 
         # set the output format of the handler
         formatter = logging.Formatter(
@@ -18,7 +22,7 @@ class Logger(logging.Logger):
 
         # create a handle in order to write into the log file
         fh = logging.handlers.TimedRotatingFileHandler(
-            filename=self.filename, when='D', interval=1, backupCount=10, encoding='utf-8')
+            filename=self.logfile, when='D', interval=1, backupCount=10, encoding='utf-8')
         fh.suffix = "%Y%m%d-%H%M.log"
         fh.setLevel(logging.INFO)  # level: DEBUG，INFO，WARNING，ERROR, CRITICAL
         fh.setFormatter(formatter)

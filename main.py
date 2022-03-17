@@ -7,11 +7,9 @@ from logsfile import Logger
 import os
 import re
 import threading
-import subprocess
 from plotly.offline import plot
 import plotly.graph_objects as go
-from global_var import Gui_Info
-from global_var import About_Info
+import global_var as gl
 
 
 class Main_GUI():
@@ -198,9 +196,9 @@ class Main_GUI():
             del actual_time_list[:5]
             del actual_time_list[-5:]
         # print(actual_time_list)
-        data_dict["x"] = [i for i in range(len(actual_time_list))]
-        data_dict["y1"] = [self.draw_dict["period_time"] for item in actual_time_list]
-        data_dict["y2"] = [self.draw_dict["buffer_time"] for item in actual_time_list]
+        data_dict["x"] = list(range(0, len(actual_time_list), 1))
+        data_dict["y1"] = [self.draw_dict["period_time"]] * len(actual_time_list)
+        data_dict["y2"] = [self.draw_dict["buffer_time"]] * len(actual_time_list)
         data_dict["y3"] = actual_time_list
 
         trace_period = go.Scatter(x=data_dict["x"], y=data_dict["y1"], name="period_time",
@@ -223,14 +221,14 @@ class Main_GUI():
     def create_root_frame(self):
         sw = self.root.winfo_screenwidth()
         sh = self.root.winfo_screenheight()
-        x = int((sw - Gui_Info["normal_size"][0]) / 2)
-        y = int((sh - Gui_Info["normal_size"][1]-60) / 2)
+        x = int((sw - gl.Gui_Info["normal_size"][0]) / 2)
+        y = int((sh - gl.Gui_Info["normal_size"][1]-60) / 2)
 
-        self.root.title(Gui_Info["proj"] + Gui_Info["version"])
+        self.root.title(gl.Gui_Info["proj"] + gl.Gui_Info["version"])
         # self.root.iconbitmap(os.path.join(Gui_Info["cwd"], Gui_Info["shortcut"]))
 
-        self.root.geometry("%dx%d+%d+%d" % (Gui_Info["normal_size"][0], Gui_Info["normal_size"][1], x, y))
-        self.root.minsize(Gui_Info["normal_size"][0], Gui_Info["normal_size"][1])
+        self.root.geometry("%dx%d+%d+%d" % (gl.Gui_Info["normal_size"][0], gl.Gui_Info["normal_size"][1], x, y))
+        self.root.minsize(gl.Gui_Info["normal_size"][0], gl.Gui_Info["normal_size"][1])
         self.root.maxsize(sw, sh)
         self.root.resizable(0, 0)
 
@@ -262,12 +260,15 @@ class Main_GUI():
         self.root.destroy()
 
     def menu_logging_debug(self):
-        os.makedirs(Gui_Info["debug_dir"], mode=0o777, exist_ok=True)
-        subprocess.Popen(f'start {Gui_Info["debug_dir"]}', shell=True)
-        # os.system("start %s" % Gui_Info["debug_dir"])
+        if "nt" in os.name:
+            dbg_dirname = os.path.normpath(os.path.join(gl.Gui_Info["win_tmp"], gl.Gui_Info["dbg_reldir"]))
+            os.startfile(dbg_dirname)
+        else:
+            dbg_dirname = os.path.join(os.path.expanduser('~'), gl.Gui_Info["dbg_reldir"])
+            os.system('xdg-open "%s"' % dbg_dirname)
 
     def menu_help_about(self):
-        tkinter.messagebox.showinfo("About", About_Info)
+        tkinter.messagebox.showinfo("About", gl.About_Info)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
 ﻿Release Note:
 
+v1.1.1:
+    support for Ubuntu platform.
+
 v1.1.0:
     Automatically parse the alsa nodes while select the log file.
 

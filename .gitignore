@@ -6,8 +6,6 @@ __pycache__/
 # user define
 *.vscode
 *.docx
-pack_with_spec.bat
-Acronym_Finder_Setup.exe
 
 # C extensions
 *.so
@@ -37,7 +35,7 @@ MANIFEST
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
+# *.spec
 
 # Installer logs
 pip-log.txt

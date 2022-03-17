@@ -1,8 +1,9 @@
 Gui_Info = {"proj": "ADTM Test",
-            "version": " v1.1.0",
+            "version": " v1.1.1",
             "email": "kainanos@outlook.com",
             "normal_size": [500, 250],
-            "debug_dir": r"C:\Apps\Temp\ADTM\debug_log",
+            "win_tmp": "C:/tmp",
+            "dbg_reldir": r"log/adtm/debug",
             "cwd": ""
             }
 
